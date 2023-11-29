@@ -27,6 +27,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -53,6 +54,12 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+
+bool cmp_priority (const struct list_elem *a, const struct list_elem *b, void *aux){
+	const struct thread *thread_a = list_entry(a,struct thread,elem);
+	const struct thread *thread_b = list_entry(b,struct thread,elem);
+	return thread_a->priority > thread_b->priority;
+}
 
 static void kernel_thread (thread_func *, void *aux);
 
@@ -108,6 +115,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -180,6 +188,8 @@ tid_t
 thread_create (const char *name, int priority,
 		thread_func *function, void *aux) {
 	struct thread *t;
+	struct thread *curr;
+	curr = thread_current();
 	tid_t tid;
 
 	ASSERT (function != NULL);
@@ -206,7 +216,9 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
-
+	if (curr->priority < list_entry(list_begin(&ready_list),struct thread, elem)->priority) {
+		thread_yield();
+	}
 	return tid;
 }
 
@@ -235,13 +247,19 @@ thread_block (void) {
 void
 thread_unblock (struct thread *t) {
 	enum intr_level old_level;
-
+	struct thread *curr;
+	curr = thread_current();
+	
 	ASSERT (is_thread (t));
 
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
-	list_push_back (&ready_list, &t->elem);
+
+	// list_push_back (&ready_list, &t->elem);
+
+	list_insert_ordered(&ready_list, &t->elem, cmp_priority, NULL);
 	t->status = THREAD_READY;
+	//
 	intr_set_level (old_level);
 }
 
@@ -298,20 +316,66 @@ void
 thread_yield (void) {
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
-
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
 	if (curr != idle_thread)
-		list_push_back (&ready_list, &curr->elem);
+		// list_push_back (&ready_list, &curr->elem);
+		list_insert_ordered(&ready_list, &curr->elem, cmp_priority, NULL);
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
 }
+
+void thread_sleep(int64_t ticks) {
+	struct thread *curr = thread_current ();
+	enum intr_level old_level;
+
+	ASSERT (!intr_context ());
+	
+	//interrupt disabled?
+
+	old_level = intr_disable ();
+	if (curr != idle_thread) {
+		curr->wakeup = ticks;
+		list_push_back (&sleep_list, &curr->elem);
+		thread_block();
+			//update the global tick if necessaty..?
+	}
+	intr_set_level (old_level);
+}
+
+void thread_wakeup(int64_t ticks) {
+	struct list_elem *search;
+	enum intr_level old_level;
+	struct thread *wake;
+	struct thread *curr;
+
+
+	old_level = intr_disable ();
+	search=list_begin(&sleep_list);
+	while (search!=list_end(&sleep_list)) {
+		wake = list_entry(search,struct thread,elem);
+		if (wake->wakeup == ticks) {
+			search = list_remove(&wake->elem);
+			thread_unblock(wake);
+			if (curr->priority < wake->priority) {
+				thread_yield();
+			}
+		}
+		else {
+			search = list_next(&wake->elem);
+		}
+	intr_set_level (old_level);
+	}
+}
+
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
+	//
+	list_sort (&ready_list,cmp_priority, NULL);
 }
 
 /* Returns the current thread's priority. */
