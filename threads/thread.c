@@ -374,8 +374,8 @@ void thread_wakeup(int64_t ticks) {
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
-	//
-	list_sort (&ready_list,cmp_priority, NULL);
+	// list_sort (&ready_list,cmp_priority, NULL);
+	thread_yield();
 }
 
 /* Returns the current thread's priority. */
