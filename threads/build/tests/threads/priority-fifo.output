@@ -10,10 +10,14 @@ Executing 'priority-fifo':
 (priority-fifo) begin
 (priority-fifo) 16 threads will iterate 16 times in the same order each time.
 (priority-fifo) If the order varies then there is a bug.
-(priority-fifo) end
-Execution of 'priority-fifo' complete.
-Timer: 24 ticks
-Thread: 0 idle ticks, 24 kernel ticks, 0 user ticks
-Console: 557 characters output
-Keyboard: 0 keys pressed
-Powering off...
+(priority-fifo) Interrupt 0x0e (#PF Page-Fault Exception) at rip=800420a0ed
+Interrupt 0x0e (#PF Page-Fault Exception) at rip=8004219004
+Interrupt 0x0e (#PF Page-Fault Exception) at rip=8004218ff4
+Kernel PANIC at ../../threads/synch.c:247 in lock_held_by_current_thread(): assertion `lock != NULL' failed.
+Call stack: 0x800421359b 0x800420a0e9 0x8004216747 0x8004210a9e 0x8004208b90 0x8004208a04 0x8004208deb 0x800420745c.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 26 ticks
+Thread: 0 idle ticks, 26 kernel ticks, 0 user ticks
+Console: 1
