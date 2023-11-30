@@ -85,13 +85,21 @@ typedef int tid_t;
  * only because they are mutually exclusive: only a thread in the
  * ready state is on the run queue, whereas only a thread in the
  * blocked state is on a semaphore wait list. */
-struct thread {
+struct thread 
+{
 	/* Owned by thread.c. */
 	tid_t tid;                          /* Thread identifier. */
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
+
+	int64_t wakeup_time;  			    /* alram_clock */ 
 	int priority;                       /* Priority. */
 	int64_t wakeup;
+
+//	int init_priority;					/* Donation */ 
+//    struct lock *wait_on_lock;			/* Donation */  
+//    struct list donations;			    /* Donation */	
+//    struct list_elem donation_elem;		/* Donation */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
@@ -110,6 +118,9 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 };
 
+/* for implement the preemtion */
+void thread_preemption (void);
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -117,6 +128,9 @@ extern bool thread_mlfqs;
 
 void thread_init (void);
 void thread_start (void);
+
+void thread_sleep (int64_t ticks);
+void thread_awake(int64_t ticks);
 
 void thread_tick (void);
 void thread_print_stats (void);

@@ -1,3 +1,5 @@
-Brand new pintos for Operating Systems and Lab (CS330), KAIST, by Youngjin Kwon.
+Krafton Jungle 
 
-The manual is available at https://casys-kaist.github.io/pintos-kaist/.
+PintOS_Project_1 / Thread
+
+Team7:  _박건률	_이동건 _조윤성
