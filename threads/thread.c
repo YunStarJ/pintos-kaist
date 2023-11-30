@@ -390,7 +390,8 @@ void thread_yield (void)
 void thread_set_priority (int new_priority) 
 {
 	thread_current ()->priority = new_priority;
-	thread_preemption();
+	// list_sort (&ready_list,cmp_priority, NULL);
+	thread_yield();
 }
 
 /* Returns the current thread's priority. */

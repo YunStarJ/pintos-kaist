@@ -94,6 +94,7 @@ struct thread
 
 	int64_t wakeup_time;  			    /* alram_clock */ 
 	int priority;                       /* Priority. */
+	int64_t wakeup;
 
 //	int init_priority;					/* Donation */ 
 //    struct lock *wait_on_lock;			/* Donation */  
