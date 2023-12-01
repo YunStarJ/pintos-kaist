@@ -160,4 +160,7 @@ void do_iret (struct intr_frame *tf);
 bool cmp_donations_priority (const struct list_elem *l,
 				const struct list_elem *s, void *aux UNUSED);
 
+void remove_with_lock(struct lock *lock);
+void refresh_priority(void);
+
 #endif /* threads/thread.h */
