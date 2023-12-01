@@ -81,14 +81,6 @@ bool cmp_donations_priority(const struct list_elem *l,
 	return list_entry(l, struct thread, donation_elem)->priority > list_entry(s, struct thread, donation_elem)->priority;
 }
 
-/* Down or "P" operation on a semaphore.  Waits for SEMA's value
-   to become positive and then atomically decrements it.
-
-   This function may sleep, so it must not be called within an
-   interrupt handler.  This function may be called with
-   interrupts disabled, but if it sleeps then the next scheduled
-   thread will probably turn interrupts back on. This is
-   sema_down function. */
 void sema_down(struct semaphore *sema)
 {
 	enum intr_level old_level;
@@ -138,6 +130,7 @@ bool sema_try_down(struct semaphore *sema)
    and wakes up one thread of those waiting for SEMA, if any.
 
    This function may be called from an interrupt handler. */
+
 void sema_up(struct semaphore *sema)
 {
 	enum intr_level old_level;
@@ -145,12 +138,15 @@ void sema_up(struct semaphore *sema)
 	ASSERT(sema != NULL);
 
 	old_level = intr_disable();
-	if (!list_empty(&sema->waiters))
+
+	if (!list_empty(&sema->waiters)){
+		list_sort(&sema->waiters, cmp_sema_priority, NULL);
 		thread_unblock(list_entry(list_pop_front(&sema->waiters),
 								  struct thread, elem));
 
-	sema->value++;
+	}
 
+	sema->value++;
 	thread_preemption();
 
 	intr_set_level(old_level);
@@ -287,22 +283,13 @@ void lock_release(struct lock *lock)
 	ASSERT(lock != NULL);
 	ASSERT(lock_held_by_current_thread(lock));
 
-	struct list_elem *curr_delem;
-	curr_delem = list_begin(&thread_current()->donations);
-	while (curr_delem != list_end(&thread_current()->donations))
-	{
-		struct thread *curr_thread = list_entry(curr_delem, struct thread, donation_elem);
-		if (curr_thread->wait_on_lock == lock)
-			curr_delem = list_remove(curr_delem);
-		else
-			curr_delem = list_next(curr_delem);
-	}
 
-	if (!list_empty(&thread_current()->donations))
-		thread_current()->priority = list_entry(list_max(&thread_current()->donations, cmp_donations_priority, NULL), struct thread, donation_elem)->priority;
-	else
-		thread_current()->priority = thread_current()->init_priority;
 	lock->holder = NULL;
+
+
+	remove_with_lock(lock);
+	refresh_priority();
+	
 	sema_up(&lock->semaphore);
 }
 
