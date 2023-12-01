@@ -94,12 +94,11 @@ struct thread
 
 	int64_t wakeup_time;  			    /* alram_clock */ 
 	int priority;                       /* Priority. */
-	int64_t wakeup;
 
-//	int init_priority;					/* Donation */ 
-//    struct lock *wait_on_lock;			/* Donation */  
-//    struct list donations;			    /* Donation */	
-//    struct list_elem donation_elem;		/* Donation */
+	int init_priority;					/* Donation */ 
+   	struct lock *wait_on_lock;			/* Donation */  
+   	struct list donations;			    /* Donation */	
+   	struct list_elem donation_elem;		/* Donation */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
@@ -157,5 +156,8 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
+
+bool cmp_donations_priority (const struct list_elem *l,
+				const struct list_elem *s, void *aux UNUSED);
 
 #endif /* threads/thread.h */

@@ -135,7 +135,7 @@ void thread_preemption (void)
 {
     if (!list_empty (&ready_list) && 
 		(thread_current ()->priority < 
-		list_entry (list_front (&ready_list), struct thread, elem)->priority))
+		list_entry (list_max(&ready_list,cmp_thread_priority,NULL), struct thread, elem)->priority))
         thread_yield ();
 }
 
@@ -389,9 +389,15 @@ void thread_yield (void)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority (int new_priority) 
 {
-	thread_current ()->priority = new_priority;
-	// list_sort (&ready_list,cmp_priority, NULL);
-	thread_yield();
+	thread_current()->init_priority = new_priority;
+	thread_current()->priority = thread_current()->init_priority;
+	
+	if(!list_empty(&thread_current()->donations)) {
+		thread_current()->priority = list_entry(list_max(&thread_current()->donations,cmp_donations_priority,NULL),struct thread,donation_elem)->priority;
+	}
+
+	list_sort (&ready_list,cmp_thread_priority, NULL);
+	thread_preemption();
 }
 
 /* Returns the current thread's priority. */
@@ -490,9 +496,9 @@ static void init_thread (struct thread *t, const char *name, int priority)
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 
-//	t->init_priority = priority;	/* Donation */
-//	t->wait_on_lock = NULL;			/* Donation */
-//	list_init (&t->donations);		/* Donation */
+	t->init_priority = priority;	/* Donation */
+	t->wait_on_lock = NULL;			/* Donation */
+	list_init (&t->donations);		/* Donation */
 
 	t->magic = THREAD_MAGIC;
 }
