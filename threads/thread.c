@@ -131,12 +131,16 @@ bool cmp_thread_priority (struct list_elem *l, struct list_elem *s, void *aux UN
 /* priority*/
 /* 1. set_thread_priority */
 /* 2. sema_up */
-void thread_preemption (void)
+ void thread_preemption(void)
 {
-    if (!list_empty (&ready_list) && 
-		(thread_current ()->priority < 
-		list_entry (list_max(&ready_list,cmp_thread_priority,NULL), struct thread, elem)->priority))
-        thread_yield ();
+	if (!list_empty(&ready_list))
+	{
+		struct thread *top_pri = list_begin(&ready_list);
+		if (cmp_thread_priority(top_pri, &thread_current()->elem, NULL))
+		{
+			thread_yield();
+		}
+	}
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
