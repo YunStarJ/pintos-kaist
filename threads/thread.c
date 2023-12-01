@@ -390,17 +390,38 @@ void thread_yield (void)
 	intr_set_level (old_level);
 }
 
+void refresh_priority(void)
+{
+	/* 현재 스레드의 우선순위를 기부받기 전의 우선순위로 초기화 */
+	thread_current()->priority = thread_current()->init_priority;
+
+	if (!list_empty(&thread_current()->donations))
+	{
+		struct thread *front_thread = list_entry(list_begin(&thread_current()->donations),
+												 struct thread,
+												 donation_elem);
+
+		if (thread_current()->priority < front_thread->priority)
+		{
+			thread_current()->priority = front_thread->priority;
+		}
+	}
+}
+
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority (int new_priority) 
 {
 	thread_current()->init_priority = new_priority;
 	thread_current()->priority = thread_current()->init_priority;
-	
-	if(!list_empty(&thread_current()->donations)) {
+		
+	/* if(!list_empty(&thread_current()->donations)) {
 		thread_current()->priority = list_entry(list_max(&thread_current()->donations,cmp_donations_priority,NULL),struct thread,donation_elem)->priority;
-	}
+	} */
 
-	list_sort (&ready_list,cmp_thread_priority, NULL);
+	refresh_priority();
+
+	// list_sort (&ready_list,cmp_thread_priority, NULL);
 	thread_preemption();
 }
 
@@ -684,4 +705,25 @@ static tid_t allocate_tid (void)
 	lock_release (&tid_lock);
 
 	return tid;
+}
+
+/* lock을 해지했을때 donations 리스트에서
+   해당 엔트리를 삭제하기 위한 함수 */
+void remove_with_lock(struct lock *lock)
+{
+	struct list_elem *curr_donation_elem = list_begin(&thread_current()->donations);
+
+	/* donations 리스트에서 지울 lock을 찾아서 삭제한다. */
+	while (curr_donation_elem != list_tail(&thread_current()->donations))
+	{
+		struct thread *curr_donation_thread = list_entry(curr_donation_elem, struct thread, donation_elem);
+		if (curr_donation_thread->wait_on_lock == lock)
+		{
+			curr_donation_elem = list_remove(curr_donation_elem);
+		}
+		else
+		{
+			curr_donation_elem = list_next(curr_donation_elem);
+		}
+	}
 }
