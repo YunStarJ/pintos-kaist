@@ -26,6 +26,9 @@
 
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
+
+static struct list all_list;
+
 static struct list ready_list;
 
 static struct list sleep_list;	/* alram_clock	*/
@@ -112,6 +115,7 @@ void thread_init (void)
 	list_init (&ready_list);
 	list_init (&destruction_req);
 	list_init (&sleep_list);	/* alram_clock	*/
+	list_init (&all_list);	/* MLFQS	*/
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread ();
@@ -229,6 +233,9 @@ tid_t thread_create (const char *name, int priority,thread_func *function, void 
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
+	/* MLFQS */
+	list_push_back(&all_list,&t->all_elem);
+
 	/* Add to run queue. */
 	thread_unblock (t);
 
@@ -256,11 +263,11 @@ void thread_sleep (int64_t ticks)	/* alram_clock */
 
 void thread_awake(int64_t ticks)	/* alram_clock */
 {
-	  enum intr_level old_level;
-		struct list_elem *curr_elem;
+	enum intr_level old_level;
+	struct list_elem *curr_elem;
 	
-	  old_level = intr_disable ();
-      curr_elem = list_begin(&sleep_list);
+	old_level = intr_disable ();
+    curr_elem = list_begin(&sleep_list);
 
     while (curr_elem != list_end(&sleep_list))
     {
@@ -525,6 +532,9 @@ static void init_thread (struct thread *t, const char *name, int priority)
 	t->wait_on_lock = NULL;			/* Donation */
 	list_init (&t->donations);		/* Donation */
 
+	t->nice = 0;
+	t->recent_cpu = 0;
+
 	t->magic = THREAD_MAGIC;
 }
 
@@ -726,4 +736,9 @@ void remove_with_lock(struct lock *lock)
 			curr_donation_elem = list_next(curr_donation_elem);
 		}
 	}
+}
+
+
+void recalculate_recent_cpu() {
+	
 }

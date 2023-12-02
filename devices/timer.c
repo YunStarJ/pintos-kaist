@@ -124,7 +124,22 @@ timer_print_stats (void) {
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
+	int load_avg = 0;
 	ticks++;
+	
+	// thread_current()->recent_cpu ++;
+	
+	// if (ticks % 4 == 0) {
+	// 	recalculate_priority();
+	// 	//thread_current()->priority = PRI_MAX - (thread_current()->recent_cpu/4) - (thread_current()->nice*2);
+	// }
+
+	// if (ticks % 100 == 0) {
+	// 	load_avg = (59/60)*load_avg + (1/60);
+	// 	recalculate_recent_cpu();
+	// 	// thread_current()->recent_cpu =  (2*load_avg)/(2*load_avg+1)*thread_current()->recent_cpu + thread_current()->nice;
+	// }
+
 	thread_tick ();
 }
 
